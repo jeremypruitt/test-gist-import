@@ -58,3 +58,50 @@ def push_branch_to_bitbucket(branch_name="master"):
 
 def fetch_origin():
     run(["git", "fetch", "origin"])
+
+
+# ----------------------------------------------------------------------
+# IF CREATE BITBUCKET
+# ----------------------------------------------------------------------
+if create_bitbucket_repo == "yes":
+    # VARS & INPUT
+    f = Figlet(font='Cybermedium', width=100)
+    text = f.renderText('Bitbucket Repo')
+
+    lower_rule()
+    lol_py(text,end="")
+    upper_rule()
+
+    project_name = '{{ cookiecutter.project_name }}'
+    repo_name =  '{{ cookiecutter.app_name }}'
+
+    repo_git_url = f'ssh://git@bb.example.com/{project_name}/{repo_name}.git'
+    repo_web_url = f'https://bb.example.comm/projects/{project_name}/repos/{repo_name}/browse'
+
+    try:
+        bb_token = getpass.getpass("🔒 Bitbucket User Token: ")
+        stash = stashy.connect("https://bb.example.com/", "{{ cookiecutter.bitbucket_username }}", bb_token)
+    except Exception as error:
+        log_error(f'ERROR: {error}')
+        sys.exit(10)
+
+    log_check(f'Making sure a repo named {repo_name} does not already exist in bitbucket')
+    verify_bitbucket_repo_doesnt_exist(project_name,repo_name)
+
+    log_check(f'Creating a new bitbucket repo named {repo_name}')
+    create_new_bitbucket_repo(project_name,repo_name)
+
+    log_check(f'Initialize new local git repo and set origin to {repo_git_url}')
+    init_local_git_repo(repo_name,repo_git_url)
+
+    log_check(f'Add scaffolded files and commit them to local repo')
+    add_and_commit()
+
+    log_check(f'Pushing code to new bitbucket new and setting upstream to master')
+    push_branch_to_bitbucket("master")
+
+    horizontal_rule()
+    log_info(f'A new repo named {repo_name} has been created in the')
+    log_blank_bright(f'project named {project_name}. Links:')
+    log_link("Git URL:", repo_git_url)
+    log_link("Web URL:", repo_web_url)
